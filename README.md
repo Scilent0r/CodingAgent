@@ -95,5 +95,5 @@ ps. with lightweight example_tasks folder in root, below it you write your txt. 
 5. Everything happens inside `./runs/<task_id>/` — a clean directory per task.
 
 This is intentionally bare-bones — no Docker, no network sandboxing yet. Good
-enough for self-contained function+test problems. We'll harden it once the loop
+enough for self-contained function+test problems. Will harden it maybe later in future once the loop
 itself is solid.
