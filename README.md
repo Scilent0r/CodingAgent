@@ -80,6 +80,8 @@ python run_task.py --task example_tasks/web_search_smoke_test.txt
 
 Watch the console — it prints each thought/action/observation as the loop runs.
 
+ps. with lightweight example_tasks folder in root, below it you write your txt. tasks, below it if using source files seed folder with items inside and protect x-file if needed.
+
 ## How it works
 
 1. `orchestrator.py` keeps a chat history and asks the model for the *next single
