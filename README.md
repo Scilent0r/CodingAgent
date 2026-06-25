@@ -7,8 +7,7 @@ reads the failures, and fixes its own code in a loop until tests pass.
 
 Recommended: **Qwen3-Coder-30B-A3B-Instruct**, GGUF, Q4_K_M or Q8_0 quant.
 Download from Hugging Face (search "Qwen3-Coder-30B-A3B-Instruct GGUF", e.g. the
-Unsloth or bartowski repacks). Q4_K_M is ~18-20GB, Q8_0 is ~32GB — Q4_K_M leaves
-more headroom for context on a 32GB card.
+Unsloth or bartowski repacks).
 
 ## 2. Launch KoboldCPP
 
