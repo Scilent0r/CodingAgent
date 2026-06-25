@@ -1,0 +1,5 @@
+requests>=2.31
+pydantic>=2.6
+ddgs>=9.0
+beautifulsoup4>=4.12
+openai>=1.40
