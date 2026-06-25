@@ -68,7 +68,15 @@ Copy that path into `config.py` (created on first run) as `SANDBOX_PYTHON`.
 
 ```bash
 conda activate coding-agent
+
 python run_task.py --task example_tasks/fizzbuzz.txt
+python run_task.py --task example_tasks/pricing_bug.txt --seed example_tasks/seed_pricing_bug --protect test_pricing.py
+python run_task.py --task example_tasks/ambiguous_name_format.txt
+python run_task.py --task example_tasks/node_bug.txt --seed example_tasks/seed_node_bug --protect stringUtils.test.js --language node
+python run_task.py --task example_tasks/memory_demo_part1.txt
+python run_task.py --task example_tasks/memory_demo_part2.txt
+python run_task.py --task example_tasks/duration_lookup.txt
+python run_task.py --task example_tasks/web_search_smoke_test.txt
 ```
 
 Watch the console — it prints each thought/action/observation as the loop runs.
