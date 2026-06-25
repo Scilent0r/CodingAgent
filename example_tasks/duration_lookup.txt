@@ -1,0 +1,14 @@
+Write a function `format_duration(seconds)` that converts a number of seconds
+into a readable string like "2 days, 3:04:05" using Python's built-in
+`datetime.timedelta`.
+
+Before implementing, use web_search to confirm the EXACT default string
+format that `str(timedelta(...))` produces — including how it handles
+negative durations and fractional seconds (microseconds) — since this format
+has genuinely surprising edge cases that are easy to misremember. Use
+fetch_url on the most relevant official documentation result to read the
+actual details rather than relying on memory alone.
+
+Then implement format_duration so it correctly wraps/normalizes that
+behavior for typical positive inputs (e.g. 90 -> "0:01:30", 90000 -> "1 day,
+1:00:00"), write thorough tests, and continue until all tests pass.

@@ -1,0 +1,8 @@
+There's a bug in the average() function in calculator.py — it returns the
+wrong result for inputs that don't divide evenly. There is an existing,
+correct test suite in test_calculator.py — do not modify it under any
+circumstances.
+
+Use list_files to see what's in this repo, then run the tests to see the
+failure, then fix the bug in calculator.py with a minimal, targeted edit.
+Continue until all tests pass.

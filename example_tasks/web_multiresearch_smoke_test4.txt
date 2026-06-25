@@ -1,0 +1,19 @@
+This is a quick SMOKE TEST for the web_research tool, not a real coding challenge — keep this as short as possible.
+Do exactly this, in order, with no extra steps:
+
+Call web_research ONCE with 3 differently-phrased queries about the current weather in Helsinki. Use varied angles to get diverse sources, for example:
+"current weather in helsinki"
+"How is the weather in helsinki right now?"
+
+Carefully review the (potentially conflicting or differently-dated) results, cross-reference them, and deduce the most likely current champion. Write a synthesized answer to research_result.txt that includes:
+The deduced answer
+Confidence level
+Date for fetched info
+Key caveats (e.g. date of latest reliable info, any conflicting reports)
+
+Write a function research_done() in research_check.py that takes no arguments and returns True.
+Write exactly ONE trivial test asserting research_done() is True.
+Run the tests once. If they pass, call finish immediately.
+
+Do not call web_research more than once, do not assert anything specific about the name returned (just check that a sensible synthesis was produced), do not add more tests, do not re-investigate.
+This task exists only to confirm the web_research tool runs end-to-end, handles diverse/multi-angle queries, and that the model performs proper cross-referencing and deduction on potentially inconsistent real-world data.

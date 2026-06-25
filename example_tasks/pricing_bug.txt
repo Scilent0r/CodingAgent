@@ -1,0 +1,22 @@
+This small pricing package (cache.py, formatting.py, pricing.py) has two
+separate, unrelated bugs causing some tests in test_pricing.py to fail. There
+is an existing, correct test suite in test_pricing.py — do not modify it
+under any circumstances.
+
+Start with a short plan (update_plan) since there's more than one bug to find
+and fix. List the files, run the tests to see what's failing, then
+investigate each failure:
+
+- For test failures involving repeated calls with different arguments
+  returning suspiciously identical results, consider using run_python to
+  reproduce the exact calls from the failing test and print intermediate
+  values — this kind of bug is often easier to catch by running it than by
+  just reading the code.
+- Use search_files to locate where the relevant functions are actually
+  defined, since the bug is not necessarily in the file most obviously
+  related to a failing test.
+
+Fix each bug with a minimal, targeted edit (prefer edit_file over rewriting
+whole files), and keep your plan updated as you resolve each one. Continue
+until all tests pass and your fixes are genuine, general fixes — not
+workarounds that only happen to satisfy these specific test inputs.

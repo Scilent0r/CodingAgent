@@ -1,0 +1,20 @@
+This is a quick SMOKE TEST for the web_research tool, not a real coding
+challenge — keep this as short as possible.
+
+Do exactly this, in order, with no extra steps:
+1. Call web_research ONCE with 2-3 differently-phrased queries about a
+   current stock price — for example "BME: ACS stock price 22.6.2026",
+   "Grupo ACS share price yesterday", "ACS.MC stock quote 22.6.2026" (use these or pick
+   your own real ticker, doesn't matter which).
+2. Write the synthesized answer (answer, confidence, and caveats) to a file
+   called research_result.txt — just the raw text, no parsing needed.
+3. Write a function `research_done()` in research_check.py that takes no
+   arguments and returns True.
+4. Write exactly ONE trivial test asserting research_done() is True.
+5. Run the tests once. If they pass, call finish immediately.
+
+Do not call web_research more than once, do not assert anything about the
+actual price value (there's no way to verify a real-time number
+automatically, so don't try), do not add more tests, do not re-investigate.
+This task exists only to confirm web_research runs end-to-end and produces
+a sensible-looking answer for you to glance at afterward.

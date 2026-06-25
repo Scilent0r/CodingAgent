@@ -1,0 +1,12 @@
+Write a function `slugify(text)` (plus tests) that turns a string into a
+URL-friendly "slug".
+
+Before implementing, ask the user (ask_user) to confirm this project's
+convention for string-processing functions: should output always be
+lowercase with spaces replaced by hyphens? Once confirmed, implement and test
+it accordingly.
+
+Then — this is the important part — use update_memory to record the
+confirmed convention as a durable project fact, phrased so that a future,
+unrelated task could read it and know the convention without having to ask
+again.

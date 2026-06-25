@@ -1,0 +1,15 @@
+This is a quick SMOKE TEST for the web_search tool, not a real coding
+challenge — keep this as short as possible.
+
+Do exactly this, in order, with no extra steps:
+1. Call web_search ONCE with a simple query (e.g. "highest temperature today in Helsinki, weather forecast").
+2. Write a function `smoke_test()` in smoke_test.py that takes no arguments
+   and returns the literal string "ok". It does not need to use or embed
+   anything from the search result — the search call itself is what's being
+   tested, not the function's logic.
+   Add current Helsinki temperature and date as a comment in front of the function.
+3. Write exactly ONE trivial test asserting smoke_test() == "ok".
+4. Run the tests once. If they pass, call finish immediately.
+
+Do not call web_search more than once, do not add more tests, do not
+re-investigate, do not use fetch_url. This task is intentionally trivial.

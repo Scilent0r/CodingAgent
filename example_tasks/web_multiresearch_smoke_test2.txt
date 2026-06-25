@@ -1,0 +1,15 @@
+This is a quick SMOKE TEST for the web_research tool, not a real coding challenge — keep this as short as possible.
+Do exactly this, in order, with no extra steps:
+
+Call web_research ONCE with 2-3 differently-phrased queries about the current population of Tokyo — for example:
+"Tokyo population 2026",
+"current population of Tokyo Japan",
+"Tokyo metro area population latest estimate".
+(Use these or similar real queries.)
+Synthesize the results into a coherent answer (including confidence and any caveats about data sources/years), then write it to a file called research_result.txt — just the raw text.
+Write a function research_done() in research_check.py that takes no arguments and returns True.
+Write exactly ONE trivial test asserting research_done() is True.
+Run the tests once. If they pass, call finish immediately.
+
+Do not call web_research more than once, do not assert anything about the actual population number (real-time estimates vary and can't be automatically verified), do not add more tests, do not re-investigate.
+This task exists only to confirm the web_research tool runs end-to-end, handles multiple related queries, performs basic cross-referencing/synthesis, and produces a sensible-looking answer for you to glance at afterward.

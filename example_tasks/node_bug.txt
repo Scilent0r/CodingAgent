@@ -1,0 +1,6 @@
+There's a bug in stringUtils.js — calling capitalize('') throws an error
+instead of returning an empty string. There is an existing, correct test
+suite in stringUtils.test.js — do not modify it under any circumstances.
+
+Run the tests first to see the failure, then fix the bug in stringUtils.js
+with a minimal, targeted edit. Continue until all tests pass.

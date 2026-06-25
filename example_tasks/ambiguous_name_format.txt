@@ -1,0 +1,9 @@
+Write a function `format_full_name(first, last)` that returns a properly
+formatted full name string, plus thorough pytest tests for it.
+
+Important: the exact convention to use is NOT specified here on purpose —
+there are multiple reasonable choices (e.g. "First Last" vs "Last, First",
+title-case vs preserving input case, how to handle already-uppercase input).
+Ask the user which convention they want before writing the implementation,
+rather than guessing. Once you have an answer, implement it, write tests that
+match the chosen convention, and continue until all tests pass.

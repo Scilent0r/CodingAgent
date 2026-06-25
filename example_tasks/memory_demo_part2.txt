@@ -1,0 +1,7 @@
+Write a function `make_tag(text)` (plus tests) that converts text into a
+short hyphenated tag suitable for this project's conventions.
+
+This project has an established convention for how string-processing
+functions should format output — check your project memory for it before
+doing anything else. You should NOT need to ask the user about this again;
+the convention should already be recorded from a previous task.
