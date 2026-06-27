@@ -16,6 +16,18 @@ class ToolError(Exception):
     pass
 
 
+class ToolEnvironmentError(ToolError):
+    """
+    Raised when a tool can't run because of a broken local setup (e.g. the
+    configured SANDBOX_PYTHON path doesn't exist, or git/node isn't on PATH)
+    rather than anything the agent did wrong. This is NOT something the
+    agent can fix by retrying or changing its approach — the orchestrator
+    treats this as fatal and stops the run immediately instead of burning
+    the whole iteration budget retrying something structurally impossible.
+    """
+    pass
+
+
 def _lang_config(language: str) -> dict:
     cfg = config.LANGUAGES.get(language)
     if not cfg:
@@ -106,6 +118,59 @@ def read_file(task_dir: Path, relative_path: str) -> str:
     return target.read_text(encoding="utf-8")
 
 
+def read_pdf(task_dir: Path, relative_path: str) -> str:
+    """
+    Extracts text from a PDF using pypdf. Also caches the full extraction as
+    a normal sibling .txt file (e.g. Katakri2020_extracted.txt) so it's
+    listable/searchable via list_files/search_files without re-extracting —
+    and so a PDF too large for one context window can still be grepped for
+    specific sections instead of only ever seeing a truncated head.
+    """
+    target = _safe_path(task_dir, relative_path)
+    if not target.exists():
+        return f"ERROR: {relative_path} does not exist."
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        raise ToolError("The 'pypdf' package is not installed. Run: pip install pypdf")
+
+    try:
+        reader = PdfReader(str(target))
+        pages_text = []
+        for i, page in enumerate(reader.pages):
+            try:
+                text = page.extract_text() or ""
+            except Exception:
+                text = ""
+            pages_text.append(f"--- page {i + 1} ---\n{text}")
+        full_text = "\n\n".join(pages_text)
+    except Exception as e:
+        raise ToolError(f"Could not extract text from {relative_path}: {type(e).__name__}: {e}")
+
+    if not full_text.strip():
+        return (
+            f"(No extractable text found in {relative_path} — it may be a scanned/image-based "
+            f"PDF with no OCR text layer. This tool does not do OCR.)"
+        )
+
+    cache_name = target.stem + "_extracted.txt"
+    cache_path = target.parent / cache_name
+    try:
+        cache_path.write_text(full_text, encoding="utf-8")
+    except OSError:
+        pass  # caching is a convenience, not essential — don't fail the read over it
+
+    truncated = full_text[: config.PDF_MAX_CHARS]
+    note = ""
+    if len(full_text) > config.PDF_MAX_CHARS:
+        note = (
+            f"\n\n...[truncated here — {len(full_text) - config.PDF_MAX_CHARS} more characters. "
+            f"Full text was cached to {cache_path.relative_to(task_dir)}; use search_files to find "
+            f"specific sections in it instead of re-reading the whole thing.]"
+        )
+    return truncated + note
+
+
 def _is_scratch_file(p: Path) -> bool:
     return p.name.startswith("_scratch.")
 
@@ -189,7 +254,10 @@ def run_scratch(task_dir: Path, code: str, language: str = config.DEFAULT_LANGUA
     except subprocess.TimeoutExpired:
         return f"Scratch script timed out after {config.SCRATCH_TIMEOUT_SECONDS}s."
     except FileNotFoundError as e:
-        return f"Could not run scratch script — interpreter not found ({e}). Is {language} installed and on PATH?"
+        raise ToolEnvironmentError(
+            f"Could not run scratch script — interpreter not found ({e}). This usually means "
+            f"a configured interpreter path is wrong — check SANDBOX_PYTHON in config.py."
+        )
 
     output = (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
     output = output[: config.MAX_OUTPUT_CHARS]
@@ -218,9 +286,11 @@ def run_tests(task_dir: Path, language: str = config.DEFAULT_LANGUAGE) -> tuple[
             f"(possible infinite loop in the code under test)."
         )
     except FileNotFoundError as e:
-        return False, (
-            f"Could not run test command for language '{language}' ({e}). "
-            f"Is the required tool installed and on PATH?"
+        raise ToolEnvironmentError(
+            f"Could not run the test command for language '{language}' ({e}). This usually "
+            f"means a configured interpreter path is wrong — check SANDBOX_PYTHON in config.py "
+            f"actually points to a python.exe that exists (run `conda env list --json` to find "
+            f"the real path), or that '{lang_cfg['test_command'][0]}' is genuinely on PATH."
         )
 
     output = (result.stdout or "") + "\n" + (result.stderr or "")
@@ -255,7 +325,7 @@ def _run_git(repo_dir: Path, args: list, timeout: int = 20) -> subprocess.Comple
             timeout=timeout,
         )
     except FileNotFoundError:
-        raise ToolError("git executable not found. Is Git installed and on PATH?")
+        raise ToolEnvironmentError("git executable not found. Is Git installed and on PATH?")
     except subprocess.TimeoutExpired:
         raise ToolError(f"git {' '.join(args)} timed out after {timeout}s")
 
