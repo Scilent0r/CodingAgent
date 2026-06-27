@@ -7,7 +7,8 @@ reads the failures, and fixes its own code in a loop until tests pass.
 
 Recommended: **Qwen3-Coder-30B-A3B-Instruct**, GGUF, Q4_K_M or Q8_0 quant.
 Download from Hugging Face (search "Qwen3-Coder-30B-A3B-Instruct GGUF", e.g. the
-Unsloth or bartowski repacks).
+Unsloth or bartowski repacks). Q4_K_M is ~18-20GB, Q8_0 is ~32GB — Q4_K_M leaves
+more headroom for context on a 32GB card.
 
 ## 2. Launch KoboldCPP
 
@@ -67,20 +68,10 @@ Copy that path into `config.py` (created on first run) as `SANDBOX_PYTHON`.
 
 ```bash
 conda activate coding-agent
-
 python run_task.py --task example_tasks/fizzbuzz.txt
-python run_task.py --task example_tasks/pricing_bug.txt --seed example_tasks/seed_pricing_bug --protect test_pricing.py
-python run_task.py --task example_tasks/ambiguous_name_format.txt
-python run_task.py --task example_tasks/node_bug.txt --seed example_tasks/seed_node_bug --protect stringUtils.test.js --language node
-python run_task.py --task example_tasks/memory_demo_part1.txt
-python run_task.py --task example_tasks/memory_demo_part2.txt
-python run_task.py --task example_tasks/duration_lookup.txt
-python run_task.py --task example_tasks/web_search_smoke_test.txt
 ```
 
 Watch the console — it prints each thought/action/observation as the loop runs.
-
-ps. with lightweight example_tasks folder in root, below it you write your txt. tasks, below it if using source files seed folder with items inside and protect x-file if needed.
 
 ## How it works
 
@@ -95,5 +86,5 @@ ps. with lightweight example_tasks folder in root, below it you write your txt. 
 5. Everything happens inside `./runs/<task_id>/` — a clean directory per task.
 
 This is intentionally bare-bones — no Docker, no network sandboxing yet. Good
-enough for self-contained function+test problems. Will harden it maybe later in future once the loop
+enough for self-contained function+test problems. We'll harden it once the loop
 itself is solid.

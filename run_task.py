@@ -11,7 +11,7 @@ from orchestrator import run_task
 # git_status/git_diff actions, auto-commit on success). Set to False to
 # disable real-repo mode entirely regardless of CLI flags — e.g. if you
 # want to temporarily restrict the agent to seeded toy tasks only.
-GIT_INTEGRATION_ENABLED = True
+GIT_INTEGRATION_ENABLED = False
 
 
 def load_workspace_config(base_dir: Path) -> dict:

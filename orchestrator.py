@@ -8,6 +8,7 @@ from tools import (
     write_file,
     edit_file,
     read_file,
+    read_pdf,
     list_files,
     search_files,
     run_scratch,
@@ -22,6 +23,7 @@ from tools import (
     fetch_url,
     gather_research_sources,
     ToolError,
+    ToolEnvironmentError,
     EXCLUDED_DIR_NAMES,
 )
 
@@ -45,13 +47,21 @@ finishing. Be conservative — only change what the task actually requires.
 by writing code and tests in {language}, then running the tests, then fixing \
 any failures, repeating until the tests pass.
 
+CRITICAL: every single response you give MUST be exactly one tool call — never \
+plain text, never an explanation or summary outside of a tool call. If you want \
+to explain your reasoning or summarize something, put it in the `thought` \
+argument of whichever tool you call. There is no other way to communicate. Keep \
+`thought` to ONE short sentence — you have a limited token budget per turn and a \
+long thought can cut off the rest of the tool call before it finishes.
+
 The current language for this task is: {language}. Test files/conventions \
 should match what `{test_cmd}` expects to discover and run.
 {git_section}
 You have a set of tools available (offered to you natively — call exactly one \
 per turn). General guidance on using them well:
 - If the task gives you existing files to start from, use list_files and \
-read_file first to see what's there before writing anything.
+read_file first to see what's there before writing anything. Use read_pdf \
+instead of read_file for any .pdf file.
 - For anything beyond a trivial one-file task, use update_plan early to lay \
 out your steps as a markdown checklist, and update it as you go. This is how \
 you stay coherent across many turns — the plan is always shown to you in full \
@@ -64,6 +74,11 @@ into FUTURE tasks in this same project — not task-specific details.
 it yourself through investigation. You have a limited number of questions per run.
 - Use web_search for a quick lookup; use web_research instead when the answer is \
 time-sensitive or numeric and worth cross-referencing multiple sources for.
+- NEVER write factual claims, numbers, or "research results" to a file unless you \
+actually obtained them from a real tool call (web_search, web_research, fetch_url, \
+or run_scratch). If a research tool fails or returns insufficient information, say \
+so honestly in your output — fabricating plausible-sounding content instead is a \
+serious violation, and the critic review is specifically watching for this.
 - Prefer edit_file over write_file when changing an existing file.
 - Use run_tests after changes to check your work. Do not call finish until the \
 most recent run_tests result was a full pass.
@@ -78,10 +93,10 @@ the literal test cases.
 
 
 CRITIC_SYSTEM_PROMPT = """You are an independent code reviewer. You will be shown \
-a task, the agent's changes, and the last test run output. Your job is to judge \
-whether the implementation GENUINELY and ROBUSTLY solves the task — not just \
-whether the test suite happened to exit 0. Submit your verdict using the \
-submit_critic_verdict tool.
+a task, the actual sequence of tool calls made during the run, the agent's changes, \
+and the last test run output. Your job is to judge whether the implementation \
+GENUINELY and ROBUSTLY solves the task — not just whether the test suite happened \
+to exit 0. Submit your verdict using the submit_critic_verdict tool.
 
 Specifically check for:
 - Tests that were weakened, deleted, or trivialized to force a pass instead of \
@@ -90,11 +105,15 @@ fixing the underlying implementation.
 a general solution.
 - Obvious unhandled edge cases the task description implies should work.
 - Any mismatch between what the task asked for and what was actually built.
+- If the task requires a SPECIFIC tool to have been used (e.g. "call web_research"), \
+the action log shown to you is the ground truth for whether that happened — trust \
+it over any impression you form from reading the file content alone. Do not claim a \
+tool "was never called" if the action log shows it was.
 
 CRITICAL — ground every claim in evidence, do not invent requirements:
-- Base your verdict strictly on what the task ACTUALLY says. If the task gives \
-example outputs, those examples ARE the spec — don't reject for not matching some \
-other format you'd prefer instead.
+- Base your verdict strictly on what the task ACTUALLY says and what the action log \
+ACTUALLY shows. If the task gives example outputs, those examples ARE the spec — \
+don't reject for not matching some other format you'd prefer instead.
 - A passing, non-trivial test suite is real evidence of correctness. If you reject \
 a solution whose tests pass, you must cite a SPECIFIC concrete value (an actual \
 input and the actual vs. expected output) that violates a literal requirement from \
@@ -143,7 +162,31 @@ def _gather_task_files(task_dir: Path) -> str:
     return "\n\n".join(parts)
 
 
-def _run_critic(task_description: str, task_dir: Path, last_test_output: str, git_mode: bool):
+def _summarize_actions_for_critic(action_log: list) -> str:
+    """
+    Compact, one-line-per-action provenance trail for the critic. This is
+    specifically what closes the gap where the critic could only see final
+    file contents and would have to GUESS whether a required tool (e.g.
+    web_research) was actually called — it can now check directly instead.
+    """
+    if not action_log:
+        return "(no actions logged)"
+    lines = []
+    for e in action_log:
+        line = f"- {e.get('action', '?')}"
+        if e.get("path"):
+            line += f" ({e['path']})"
+        if e.get("research_sources"):
+            line += f" [sources consulted: {e['research_sources']}]"
+        if e.get("research_synthesis_failed"):
+            line += " [synthesis step failed, fell back to raw sources]"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _run_critic(
+    task_description: str, task_dir: Path, last_test_output: str, git_mode: bool, action_log: list
+):
     if git_mode:
         try:
             diff_text = git_diff(task_dir)
@@ -153,12 +196,16 @@ def _run_critic(task_description: str, task_dir: Path, last_test_output: str, gi
     else:
         files_blob = _gather_task_files(task_dir)
 
+    actions_blob = _summarize_actions_for_critic(action_log)
+
     critic_messages = [
         {"role": "system", "content": CRITIC_SYSTEM_PROMPT},
         {
             "role": "user",
             "content": (
                 f"Task:\n{task_description}\n\n"
+                f"Actions taken during this run (in order — this is the ground truth for "
+                f"whether a specific tool was used):\n{actions_blob}\n\n"
                 f"{files_blob}\n\n"
                 f"Last test run output:\n{last_test_output}"
             ),
@@ -367,6 +414,9 @@ def run_task(
             elif tool_name == "read_file":
                 obs = read_file(task_dir, args.path)
 
+            elif tool_name == "read_pdf":
+                obs = read_pdf(task_dir, args.path)
+
             elif tool_name == "list_files":
                 obs = list_files(task_dir)
 
@@ -398,18 +448,38 @@ def run_task(
 
             elif tool_name == "web_research":
                 sources = gather_research_sources(args.queries)
+                print(f"[web_research] Found {len(sources)} source(s): {[s['href'] for s in sources]}")
                 if not sources:
                     obs = "No search results found across any of the queries tried."
                 else:
-                    research_result = _run_research(args.queries, sources)
-                    entry["research_confidence"] = research_result.confidence
-                    entry["research_sources"] = [s["href"] for s in sources]
-                    obs = (
-                        f"Answer: {research_result.answer}\n"
-                        f"Confidence: {research_result.confidence}\n"
-                        f"Caveats: {research_result.caveats or '(none)'}\n"
-                        f"Sources consulted: {[s['href'] for s in sources]}"
-                    )
+                    try:
+                        research_result = _run_research(args.queries, sources)
+                    except LLMError as e:
+                        # Synthesis failed, but the sources themselves are real — hand
+                        # them over raw rather than losing them and leaving the model
+                        # with nothing but an error (which is what was causing it to
+                        # fabricate plausible-looking "research" instead).
+                        print(f"[web_research] Synthesis step failed ({e}); falling back to raw sources.")
+                        raw_blob = "\n\n".join(
+                            f"- {s['href']}\n  {s['content'][:400]}" for s in sources
+                        )
+                        obs = (
+                            f"Synthesis step failed ({e}), but {len(sources)} real source(s) were "
+                            f"found. Use this raw material directly — do NOT fabricate or invent "
+                            f"information. If it's insufficient to answer confidently, say so "
+                            f"honestly rather than making something up.\n\n{raw_blob}"
+                        )
+                        entry["research_synthesis_failed"] = str(e)
+                        entry["research_sources"] = [s["href"] for s in sources]
+                    else:
+                        entry["research_confidence"] = research_result.confidence
+                        entry["research_sources"] = [s["href"] for s in sources]
+                        obs = (
+                            f"Answer: {research_result.answer}\n"
+                            f"Confidence: {research_result.confidence}\n"
+                            f"Caveats: {research_result.caveats or '(none)'}\n"
+                            f"Sources consulted: {[s['href'] for s in sources]}"
+                        )
 
             elif tool_name == "fetch_url":
                 obs = fetch_url(args.url)
@@ -445,7 +515,7 @@ def run_task(
                     )
                 else:
                     print("[finish]   Tests pass — sending to critic review...")
-                    verdict = _run_critic(task_description, task_dir, last_test_output, git_mode)
+                    verdict = _run_critic(task_description, task_dir, last_test_output, git_mode, action_log)
                     entry["critic_approved"] = verdict.approved
                     entry["critic_reason"] = verdict.reasoning
                     entry["critic_concerns"] = verdict.concerns
@@ -489,11 +559,23 @@ def run_task(
                     obs = (
                         f"Independent review rejected this solution: {verdict.reasoning} "
                         f"Concerns: {verdict.concerns}. Address these and run tests again "
-                        f"before calling finish."
+                        f"before calling finish. If a specific concern is factually wrong — "
+                        f"e.g. it claims a tool was never called but you can see in your own "
+                        f"earlier turns in this conversation that it was — don't redo that part "
+                        f"from scratch; just note the discrepancy and focus on whatever genuinely "
+                        f"needs fixing."
                     )
             else:
                 obs = f"Unknown tool: {tool_name}"
 
+        except ToolEnvironmentError as e:
+            msg = (
+                f"Fatal environment problem (not something the agent can fix by retrying "
+                f"or changing its approach): {e}"
+            )
+            print(f"\n[FATAL ENV ERROR] {msg}")
+            log({"iteration": i, "fatal_error": msg})
+            return TaskResult(False, i, msg, task_dir)
         except ToolError as e:
             obs = f"ERROR: {e}"
             tool_error_this_turn = True

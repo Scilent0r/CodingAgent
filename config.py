@@ -11,7 +11,7 @@ MODEL_NAME = "qwen3-coder-30b-a3b-instruct"
 
 # Path to the python.exe INSIDE the minimal "agent-sandbox" conda env.
 # Find it with: conda env list --json
-SANDBOX_PYTHON = r"C:\Users\PATH\miniconda3\envs\agent-sandbox\python.exe"
+SANDBOX_PYTHON = r"C:\Users\scile\miniconda3\envs\agent-sandbox\python.exe"
 
 # Safety limits
 MAX_ITERATIONS = 18
@@ -35,7 +35,8 @@ PROJECT_MEMORY_FILE = "project_memory.md"
 
 # Sampling
 TEMPERATURE = 0.4
-MAX_TOKENS = 1500
+MAX_TOKENS = 3000  # was 1500 — verbose thoughts + Qwen3-Coder's XML tool-call format were getting cut off mid-generation before completing
+FREQUENCY_PENALTY = 0.4  # discourages repetition-loop degeneration (e.g. "the the the the...")
 CRITIC_TEMPERATURE = 0.2  # more conservative than the worker — less prone to inventing nitpicks
 CRITIC_MAX_TOKENS = 1200  # needs room for a real reasoning trace, not just a one-line verdict
 
@@ -100,6 +101,7 @@ ENABLE_WEB_TOOLS = True
 MAX_WEB_RESULTS = 5
 WEB_FETCH_TIMEOUT_SECONDS = 15
 WEB_FETCH_MAX_CHARS = 6000
+PDF_MAX_CHARS = 20000  # generous, but a long reference doc can still exceed this — see read_pdf's caching
 
 # --- Multi-source research (web_research action) ---
 # Unlike plain web_search (one query, snippets only), this issues several

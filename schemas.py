@@ -35,6 +35,11 @@ class ReadFileArgs(BaseModel):
     path: str = Field(description="Relative file path to read.")
 
 
+class ReadPdfArgs(BaseModel):
+    thought: str = Field(description="Brief reasoning for this action.")
+    path: str = Field(description="Relative path of a PDF file to extract text from. read_file does not work on PDFs.")
+
+
 class ListFilesArgs(BaseModel):
     thought: str = Field(description="Brief reasoning for this action.")
 
@@ -131,6 +136,11 @@ ACTION_TOOL_REGISTRY = {
         EditFileArgs,
     ),
     "read_file": ("Read the full contents of a file.", ReadFileArgs),
+    "read_pdf": (
+        "Extract text from a PDF file. Use this instead of read_file for any .pdf — read_file "
+        "only works on plain text and will fail or return garbage on a PDF.",
+        ReadPdfArgs,
+    ),
     "list_files": ("List every file currently in the task directory.", ListFilesArgs),
     "search_files": ("Regex search across all files in the task directory.", SearchFilesArgs),
     "run_scratch": (
