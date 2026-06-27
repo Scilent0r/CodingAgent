@@ -11,7 +11,7 @@ MODEL_NAME = "qwen3-coder-30b-a3b-instruct"
 
 # Path to the python.exe INSIDE the minimal "agent-sandbox" conda env.
 # Find it with: conda env list --json
-SANDBOX_PYTHON = r"C:\Users\scile\miniconda3\envs\agent-sandbox\python.exe"
+SANDBOX_PYTHON = r"C:\Users\CORRECT_PATH_HERE\miniconda3\envs\agent-sandbox\python.exe"
 
 # Safety limits
 MAX_ITERATIONS = 18
